@@ -6,6 +6,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
+    /* Animación de latido */
     @keyframes heartbeat {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.1); }
@@ -17,54 +18,57 @@
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex">
 
+  <!-- Overlay -->
+  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden md:hidden z-40" onclick="toggleSidebar()"></div>
+
   <!-- SIDEBAR -->
   <aside id="sidebar" 
-         class="w-64 bg-gray-800 p-6 space-y-6 shadow-lg transition-transform duration-300 
-                fixed md:static inset-y-0 left-0 z-50 md:translate-x-0 -translate-x-full">
-    
-    <!-- LOGO -->
+    class="w-64 bg-gray-800 p-6 space-y-6 shadow-lg transition-transform duration-300 
+           fixed md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0">
+
+    <!-- Logo centrado -->
     <div class="flex justify-center">
       <img src="{{ url_for('static', filename='images/logo.png') }}" 
            alt="Logo" 
            class="w-32 h-32 object-contain animate-heartbeat">
     </div>
 
-    <!-- NAV -->
+    <!-- Menú -->
     <nav class="space-y-3 mt-6">
-      <a href="{{ url_for('formulario_usuario') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'formulario_usuario' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('formulario_usuario') }}" 
+         class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'formulario_usuario' %}bg-gray-700{% endif %}">
         <i data-lucide="user-plus" class="w-4 h-4"></i> Registrar Usuario
       </a>
-
-      <a href="{{ url_for('listar_usuarios') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'listar_usuarios' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('listar_usuarios') }}" 
+         class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'listar_usuarios' %}bg-gray-700{% endif %}">
         <i data-lucide="users" class="w-4 h-4"></i> Clientes Activos
       </a>
-
-      <a href="{{ url_for('usuarios_inactivos') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'usuarios_inactivos' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('usuarios_inactivos') }}" 
+         class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'usuarios_inactivos' %}bg-gray-700{% endif %}">
         <i data-lucide="user-x" class="w-4 h-4"></i> Usuarios Inactivos
       </a>
-
-      <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'dashboard' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('dashboard') }}" 
+         class="block px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'dashboard' %}bg-gray-700{% endif %}">
         <i data-lucide="layout-dashboard" class="inline-block w-4 h-4 mr-2"></i> Dashboard
       </a>
-
-      <a href="{{ url_for('ver_transacciones') }}" class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition">
+      <a href="{{ url_for('ver_transacciones') }}" 
+         class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition">
         <i data-lucide="credit-card" class="inline-block w-4 h-4 mr-2"></i> <span>Transacciones</span>
       </a>
-
-      <a href="{{ url_for('registros_ingreso') }}" class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition {% if request.endpoint == 'registros_ingreso' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('registros_ingreso') }}" 
+         class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition {% if request.endpoint == 'registros_ingreso' %}bg-gray-700{% endif %}">
         <i data-lucide="clock" class="inline-block w-4 h-4 mr-2"></i> <span>Registros de Ingreso</span>
       </a>
-
-      <a href="{{ url_for('pantalla_acceso') }}" class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition {% if request.endpoint == 'pantalla_acceso' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('pantalla_acceso') }}" 
+         class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition {% if request.endpoint == 'pantalla_acceso' %}bg-gray-700{% endif %}">
         <i data-lucide="scan-face" class="inline-block w-4 h-4 mr-2"></i> <span>Pantalla de Acceso</span>
       </a>
     </nav>
   </aside>
 
   <!-- CONTENIDO -->
-  <main class="flex-1 p-8 transition-all duration-300 w-full md:ml-64">
-    
-    <!-- Botón hamburguesa solo en móvil -->
+  <main class="flex-1 p-4 md:p-8 transition-all duration-300 w-full md:ml-64">
+    <!-- Botón hamburguesa -->
     <button onclick="toggleSidebar()" 
             class="mb-4 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center gap-2 md:hidden">
       <i id="toggle-icon" data-lucide="menu" class="w-5 h-5"></i>
@@ -76,12 +80,14 @@
 
   <script>
     const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
     const icon = document.getElementById('toggle-icon');
 
     function toggleSidebar() {
+      const isHidden = sidebar.classList.contains("-translate-x-full");
       sidebar.classList.toggle("-translate-x-full");
-      icon.setAttribute("data-lucide", 
-                        sidebar.classList.contains("-translate-x-full") ? "menu" : "x");
+      overlay.classList.toggle("hidden", !isHidden);
+      icon.setAttribute("data-lucide", isHidden ? "x" : "menu");
       lucide.createIcons();
     }
 
@@ -89,4 +95,5 @@
   </script>
 </body>
 </html>
+
 
