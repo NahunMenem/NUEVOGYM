@@ -11,9 +11,13 @@ import psycopg2
 app = Flask(__name__)
 from flask_sqlalchemy import SQLAlchemy
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://negocio2_user:0reioO9H1lLJqE2IazaFKoZ55ZItnU5X@dpg-d04do9qdbo4c73egutjg-a.oregon-postgres.render.com/negocio2'
+import os
+DATABASE_URL = os.environ.get("DATABASE_URL")
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+
+
+
 
 # Configuración del lector
 HIKVISION_IP = "192.168.1.32"
@@ -35,7 +39,7 @@ class UsuarioLector(db.Model):
     telefono = db.Column(db.String(30))
     valido_hasta = db.Column(db.Date)
 
-DATABASE_URL = "postgresql://negocio2_user:0reioO9H1lLJqE2IazaFKoZ55ZItnU5X@dpg-d04do9qdbo4c73egutjg-a.oregon-postgres.render.com/negocio2"
+#DATABASE_URL = "postgresql://negocio2_user:0reioO9H1lLJqE2IazaFKoZ55ZItnU5X@dpg-d04do9qdbo4c73egutjg-a.oregon-postgres.render.com/negocio2"
 
 @app.route('/cargar_usuario', methods=['POST'])
 def cargar_usuario():
@@ -768,6 +772,9 @@ def eliminar_usuario_sistema(legajo):
     except Exception as e:
         return jsonify({"status": "error", "mensaje": str(e)}), 500
 
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+
+#if __name__ == '__main__':
+ #   app.run(host="0.0.0.0", port=5000, debug=True)
