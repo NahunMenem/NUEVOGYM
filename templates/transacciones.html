@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-10">
+  <h1 class="text-3xl font-bold mb-6 flex items-center gap-3">
+    <i data-lucide="credit-card" class="w-6 h-6 text-green-400"></i>
+    Transacciones
+  </h1>
+
+  <!-- Filtros por fecha -->
+  <form method="GET" class="flex flex-wrap gap-4 mb-6">
+    <div>
+      <label class="block mb-1">Desde</label>
+      <input type="date" name="desde" value="{{ desde }}" class="bg-gray-800 border border-gray-600 rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block mb-1">Hasta</label>
+      <input type="date" name="hasta" value="{{ hasta }}" class="bg-gray-800 border border-gray-600 rounded px-3 py-2">
+    </div>
+    <div class="flex items-end">
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Filtrar</button>
+    </div>
+  </form>
+
+  <!-- Tabla -->
+  <div class="overflow-x-auto rounded-xl shadow-lg border border-gray-700">
+    <table class="min-w-full bg-gray-800">
+      <thead class="bg-gray-700 text-sm text-gray-300 uppercase">
+        <tr>
+          <th class="p-3 text-left">Fecha</th>
+          <th class="p-3 text-left">Legajo</th>
+          <th class="p-3 text-left">Nombre</th>
+          <th class="p-3 text-left">Monto</th>
+          <th class="p-3 text-left">Método de pago</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700 text-sm">
+        {% for p in pagos %}
+        <tr class="hover:bg-gray-700">
+          <td class="p-3">{{ p.fecha.strftime('%Y-%m-%d') }}</td>
+          <td class="p-3">{{ p.legajo }}</td>
+          <td class="p-3">{{ p.nombre }}</td>
+          <td class="p-3">${{ '%.2f'|format(p.monto) }}</td>
+          <td class="p-3">{{ p.metodo_pago }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="p-4 text-center text-gray-400">Sin transacciones</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

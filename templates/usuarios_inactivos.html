@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-10">
+  <h1 class="text-3xl font-bold mb-8 flex items-center gap-3">
+  <i data-lucide="users" class="w-6 h-6 text-red-400"></i>
+  Usuarios inactivos (más de 2 meses sin venir)
+ </h1>
+
+
+  <!-- Filtros -->
+  <div class="flex flex-col md:flex-row gap-4 mb-6">
+    <input type="text" id="buscador" placeholder="Buscar por nombre..." class="bg-gray-800 border border-gray-600 rounded px-4 py-2 w-full md:w-1/3" oninput="filtrarTabla()">
+    <select id="filtroGenero" class="bg-gray-800 border border-gray-600 rounded px-4 py-2 w-full md:w-1/4" onchange="filtrarTabla()">
+      <option value="">Filtrar por género</option>
+      <option value="Masculino">Masculino</option>
+      <option value="Femenino">Femenino</option>
+      <option value="Otro">Otro</option>
+    </select>
+    <select id="filtroEstado" class="bg-gray-800 border border-gray-600 rounded px-4 py-2 w-full md:w-1/4" onchange="filtrarTabla()">
+      <option value="">Filtrar por membresía</option>
+      <option value="Vigente">Vigente</option>
+      <option value="Vencido">Vencido</option>
+    </select>
+  </div>
+
+  <!-- Tabla -->
+  <div class="overflow-x-auto rounded-xl shadow-lg border border-gray-700">
+    <table id="tablaUsuarios" class="min-w-full bg-gray-800">
+      <thead class="bg-gray-700 text-sm text-gray-300 uppercase">
+        <tr>
+          <th class="p-3 text-left">Legajo</th>
+          <th class="p-3 text-left">Nombre</th>
+          <th class="p-3 text-left">Género</th>
+          <th class="p-3 text-left">Fecha Nac.</th>
+          <th class="p-3 text-left">Teléfono</th>
+          <th class="p-3 text-left">Válido hasta</th>
+          <th class="p-3 text-left">Membresía</th>
+          <th class="p-3 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700 text-sm">
+        {% for u in usuarios %}
+        <tr class="hover:bg-gray-700 fila-usuario"
+            data-nombre="{{ u.name | lower }}"
+            data-genero="{{ u.genero or '' }}"
+            data-membresia="{{ u.membresia or '' }}">
+          <td class="p-3">{{ u.employeeNo }}</td>
+          <td class="p-3">{{ u.name }}</td>
+          <td class="p-3">{{ u.genero or "-" }}</td>
+          <td class="p-3">{{ u.fecha_nacimiento or "-" }}</td>
+          <td class="p-3">{{ u.telefono or "-" }}</td>
+          <td class="p-3">{{ u.Valid.endTime[:16].replace('T', ' ') if u.Valid }}</td>
+          <td class="p-3">
+            {% if u.membresia == "Vigente" %}
+              <span class="text-green-400 font-semibold">Vigente</span>
+            {% elif u.membresia == "Vencido" %}
+              <span class="text-red-500 font-semibold">Vencido</span>
+            {% else %}
+              <span class="text-gray-400">-</span>
+            {% endif %}
+          </td>
+          <td class="p-3 text-center space-y-1">
+            <button onclick="eliminarUsuario('{{ u.employeeNo }}')" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded flex items-center gap-1 justify-center w-full">
+              <i data-lucide="trash-2" class="w-4 h-4"></i> Eliminar
+            </button>
+            <!-- Editar -->
+            <button
+              onclick='abrirModalEditar(
+                "{{ u.employeeNo }}",
+                "{{ u.name|escape }}",
+                "{{ u.genero or '' }}",
+                "{{ u.fecha_nacimiento or '' }}",
+                "{{ u.telefono or '' }}"
+              )'
+              class="bg-yellow-500 hover:bg-yellow-600 px-3 py-1 rounded flex items-center gap-1 justify-center w-full"
+            >
+              <i data-lucide="edit" class="w-4 h-4"></i> Editar
+            </button>
+            
+
+
+            <!-- Pago -->
+            <button onclick="abrirModalPago('{{ u.employeeNo }}')" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded flex items-center gap-1 justify-center w-full">
+              <i data-lucide="dollar-sign" class="w-4 h-4"></i> Pago
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="p-4 text-center text-gray-400">Sin usuarios</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL PAGO -->
+<div id="modalPago" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center">
+  <div class="bg-gray-800 text-white p-6 rounded-xl w-full max-w-lg shadow-xl">
+    <h2 class="text-xl font-bold mb-4">Registrar Pago</h2>
+    <form method="POST" action="/registrar_pago" class="space-y-4">
+      <input type="hidden" name="legajo_pago" id="legajo_pago">
+      <div>
+        <label class="block mb-1">Nuevo válido hasta</label>
+        <input type="date" name="nuevo_valido_hasta" id="nuevo_valido_hasta" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2" required>
+      </div>
+      <div>
+        <label class="block mb-1">Monto pagado</label>
+        <input type="number" name="monto_pago" id="monto_pago" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2" step="0.01" required>
+      </div>
+      <div>
+        <label class="block mb-1">Método de pago</label>
+        <select name="metodo_pago" id="metodo_pago" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2" required>
+            <option value="">Seleccionar método</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Débito">Débito</option>
+        </select>
+        </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="cerrarModalPago()" class="bg-gray-600 px-4 py-2 rounded">Cancelar</button>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center">
+  <div class="bg-gray-800 text-white p-6 rounded-xl w-full max-w-lg shadow-xl">
+    <h2 class="text-xl font-bold mb-4">Editar Usuario</h2>
+    <form method="POST" action="/editar_usuario" class="space-y-4">
+      <input type="hidden" name="legajo_editar" id="legajo_editar">
+      <div>
+        <label class="block mb-1">Nombre</label>
+        <input type="text" name="nombre" id="nombre_editar" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2" required>
+      </div>
+      <div>
+        <label class="block mb-1">Género</label>
+        <select name="genero" id="genero_editar" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+          <option value="Masculino">Masculino</option>
+          <option value="Femenino">Femenino</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div>
+        <label class="block mb-1">Fecha de nacimiento</label>
+        <input type="date" name="fecha_nacimiento" id="fecha_nacimiento_editar" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block mb-1">Teléfono</label>
+        <input type="text" name="telefono" id="telefono_editar" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="cerrarModalEditar()" class="bg-gray-600 px-4 py-2 rounded">Cancelar</button>
+        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded text-white">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function abrirModalPago(legajo) {
+    console.log("Abrir modal de pago", legajo); // Debug
+    document.getElementById('modalPago').classList.remove('hidden');
+    document.getElementById('legajo_pago').value = legajo;
+  }
+
+  function cerrarModalPago() {
+    document.getElementById('modalPago').classList.add('hidden');
+  }
+
+  function abrirModalEditar(legajo, nombre, genero, nacimiento, telefono) {
+    console.log("Abrir modal de editar", legajo); // Debug
+    document.getElementById('modalEditar').classList.remove('hidden');
+    document.getElementById('legajo_editar').value = legajo;
+    document.getElementById('nombre_editar').value = nombre;
+    document.getElementById('genero_editar').value = genero;
+    document.getElementById('fecha_nacimiento_editar').value = nacimiento;
+    document.getElementById('telefono_editar').value = telefono;
+  }
+
+  function cerrarModalEditar() {
+    document.getElementById('modalEditar').classList.add('hidden');
+  }
+
+  function eliminarUsuario(employeeNo) {
+    if (confirm(`¿Eliminar al usuario ${employeeNo}?`)) {
+      fetch(`/eliminar_usuario/${employeeNo}`, { method: "POST" })
+        .then(r => r.json())
+        .then(() => location.reload())
+        .catch(() => alert("Error al eliminar"));
+    }
+  }
+
+  function filtrarTabla() {
+    const buscador = document.getElementById("buscador").value.toLowerCase();
+    const genero = document.getElementById("filtroGenero").value;
+    const estado = document.getElementById("filtroEstado").value;
+
+    document.querySelectorAll(".fila-usuario").forEach(fila => {
+      const nombre = fila.dataset.nombre;
+      const gen = fila.dataset.genero;
+      const mem = fila.dataset.membresia;
+
+      const coincideNombre = nombre.includes(buscador);
+      const coincideGenero = !genero || gen === genero;
+      const coincideEstado = !estado || mem === estado;
+
+      fila.style.display = (coincideNombre && coincideGenero && coincideEstado) ? "" : "none";
+    });
+  }
+
+  // Iconos
+  if (window.lucide) {
+    lucide.createIcons();
+  } else {
+    console.warn("Lucide no cargó");
+  }
+</script>
+
+{% endblock %}

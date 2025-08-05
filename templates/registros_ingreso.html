@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="p-6 text-[#DAD7CD]">
+    <div class="flex items-center gap-3 mb-6">
+        <i data-lucide="clock" class="w-6 h-6 text-[#A3B18A]"></i>
+        <h1 class="text-3xl font-bold">Registros de Ingreso del Día</h1>
+    </div>
+
+    {% if logs %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-[#1c1f24] shadow-lg rounded-lg overflow-hidden text-sm">
+            <thead class="bg-[#2f3339] text-[#DAD7CD] uppercase text-xs tracking-wider">
+                <tr>
+                    <th class="px-6 py-3 text-left">Fecha y Hora</th>
+                    <th class="px-6 py-3 text-left">Legajo</th>
+                    <th class="px-6 py-3 text-left">Nombre</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for legajo, nombre, fecha in logs %}
+                <tr class="border-t border-[#2f3339] hover:bg-[#2a2d32] transition">
+                    <td class="px-6 py-3">{{ fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td class="px-6 py-3">{{ legajo }}</td>
+                    <td class="px-6 py-3 font-semibold">{{ nombre }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="flex items-center gap-2 mt-6 text-[#A3B18A]">
+        <i data-lucide="info" class="w-5 h-5"></i>
+        <p>No hay ingresos registrados hoy.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
