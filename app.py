@@ -11,15 +11,10 @@ import psycopg2
 app = Flask(__name__)
 from flask_sqlalchemy import SQLAlchemy
 
-from flask_sqlalchemy import SQLAlchemy
 import os
-
 DATABASE_URL = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)  # ← ESTA LÍNEA ES LA QUE FALTA
-
 
 
 
@@ -122,8 +117,22 @@ def formulario_usuario():
 # Ruta para listar usuarios-------------------------------------------------------------------------------------------
 from datetime import date, timedelta, timezone
 
+from flask import request
+from datetime import date
+
 @app.route('/listar_usuarios')
 def listar_usuarios():
+    ip_cliente = request.remote_addr
+    print(f"IP del cliente: {ip_cliente}")
+
+    # Si es red local o localhost → traer del lector
+    if ip_cliente.startswith("192.168.") or ip_cliente == "127.0.0.1":
+        return listar_usuarios_lector()
+    else:
+        return listar_usuarios_bd()
+
+
+def listar_usuarios_lector():
     url = f"{BASE_URL}/AccessControl/UserInfo/Search?format=json"
     payload = {
         "UserInfoSearchCond": {
@@ -134,58 +143,108 @@ def listar_usuarios():
     }
 
     try:
-        # Datos del lector
         res = requests.post(
             url,
             json=payload,
             headers={"Content-Type": "application/json"},
             auth=HTTPDigestAuth(USERNAME, PASSWORD),
-            verify=False
+            verify=False,
+            timeout=5
         )
         usuarios_lector = res.json().get("UserInfoSearch", {}).get("UserInfo", [])
 
-        # Datos de la base
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
-        cur.execute("SELECT legajo, genero, fecha_nacimiento, telefono FROM usuarios_lector")
+        cur.execute("SELECT legajo, nombre, genero, fecha_nacimiento, telefono, valido_hasta FROM usuarios_lector")
         datos_db = cur.fetchall()
         conn.close()
 
-        # Diccionario rápido
+        # Diccionario por legajo
         datos_dict = {
-            fila[0]: {
-                "genero": fila[1],
-                "fecha_nacimiento": fila[2],
-                "telefono": fila[3]
+            str(f[0]): {
+                "nombre": f[1],
+                "genero": f[2],
+                "fecha_nacimiento": f[3].isoformat() if f[3] else None,
+                "telefono": f[4],
+                "valido_hasta": f[5].isoformat() if f[5] else None
             }
-            for fila in datos_db
+            for f in datos_db
         }
 
-        # Fecha de hoy para evaluar membresía
         fecha_hoy = date.today().isoformat()
 
-        # Fusión
+        # Fusionar datos
+        fusionados = {}
         for u in usuarios_lector:
-            legajo = u.get("employeeNo")
-            datos_extra = datos_dict.get(legajo)
-            if datos_extra:
-                u["genero"] = datos_extra["genero"]
-                u["fecha_nacimiento"] = datos_extra["fecha_nacimiento"]
-                u["telefono"] = datos_extra["telefono"]
-            else:
-                u["genero"] = u["fecha_nacimiento"] = u["telefono"] = None
+            legajo = str(u.get("employeeNo"))
+            fusionados[legajo] = {
+                "employeeNo": legajo,
+                "name": u.get("name"),
+                "genero": None,
+                "fecha_nacimiento": None,
+                "telefono": None,
+                "Valid": u.get("Valid"),
+                "valido_hasta": None
+            }
 
-            # Evaluación de membresía
-            if u.get("Valid") and "endTime" in u["Valid"]:
-                fecha_validez = u["Valid"]["endTime"][:10]  # yyyy-mm-dd
+        for legajo, datos in datos_dict.items():
+            if legajo in fusionados:
+                fusionados[legajo].update(datos)
+            else:
+                fusionados[legajo] = {
+                    "employeeNo": legajo,
+                    "name": datos["nombre"],
+                    "genero": datos["genero"],
+                    "fecha_nacimiento": datos["fecha_nacimiento"],
+                    "telefono": datos["telefono"],
+                    "valido_hasta": datos["valido_hasta"],
+                    "Valid": None
+                }
+
+        # Evaluar membresía
+        for u in fusionados.values():
+            fecha_validez = u.get("valido_hasta") or (u.get("Valid", {}).get("endTime")[:10] if u.get("Valid") else None)
+            if fecha_validez:
                 u["membresia"] = "Vigente" if fecha_validez >= fecha_hoy else "Vencido"
             else:
                 u["membresia"] = "Sin datos"
 
-        return render_template("lista_usuarios.html", usuarios=usuarios_lector)
+        return render_template("lista_usuarios.html", usuarios=list(fusionados.values()))
 
     except Exception as e:
         return f"Error al obtener usuarios: {str(e)}"
+
+
+def listar_usuarios_bd():
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT nombre, legajo, genero, fecha_nacimiento, telefono, valido_hasta
+            FROM usuarios_lector
+        """)
+        usuarios_db = cur.fetchall()
+        conn.close()
+
+        fecha_hoy = date.today()
+
+        usuarios = []
+        for u in usuarios_db:
+            usuarios.append({
+                "name": u[0],
+                "employeeNo": u[1],
+                "genero": u[2],
+                "fecha_nacimiento": u[3].isoformat() if u[3] else None,
+                "telefono": u[4],
+                "valido_hasta": u[5].isoformat() if u[5] else None,
+                "membresia": "Vigente" if u[5] and u[5] >= fecha_hoy else "Vencido"
+            })
+
+        return render_template("lista_usuarios.html", usuarios=usuarios)
+
+    except Exception as e:
+        return f"Error al obtener usuarios desde la DB: {str(e)}"
+
 
 
 
@@ -783,4 +842,3 @@ if __name__ == "__main__":
 
 #if __name__ == '__main__':
  #   app.run(host="0.0.0.0", port=5000, debug=True)
-
