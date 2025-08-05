@@ -1,84 +1,123 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <title>{% block title %}Panel{% endblock %}</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Sistema{% endblock %}</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/icono.ico') }}">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @keyframes heartbeat {
+    @keyframes latido {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.15); }
+      50% { transform: scale(1.1); }
     }
-    .animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
+    .animate-latido {
+      animation: latido 1.5s infinite ease-in-out;
+    }
   </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col">
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" 
-         class="fixed md:static inset-y-0 left-0 w-64 bg-gray-800 p-6 space-y-6 shadow-lg transition-transform transform -translate-x-full md:translate-x-0 z-50">
-    <div class="flex justify-center">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" 
-           alt="Logo" 
-           class="w-32 h-32 object-contain animate-heartbeat">
-    </div>
+<body class="bg-gray-900 text-gray-100">
 
-    <nav class="space-y-3 mt-6">
-      <a href="{{ url_for('formulario_usuario') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'formulario_usuario' %}bg-gray-700{% endif %}">
-        <i data-lucide="user-plus" class="w-4 h-4"></i> Registrar Usuario
-      </a>
-      <a href="{{ url_for('listar_usuarios') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'listar_usuarios' %}bg-gray-700{% endif %}">
-        <i data-lucide="users" class="w-4 h-4"></i> Clientes Activos
-      </a>
-      <a href="{{ url_for('usuarios_inactivos') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'usuarios_inactivos' %}bg-gray-700{% endif %}">
-        <i data-lucide="user-x" class="w-4 h-4"></i> Usuarios Inactivos
-      </a>
-      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'dashboard' %}bg-gray-700{% endif %}">
-        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
-      </a>
-      <a href="{{ url_for('ver_transacciones') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700">
-        <i data-lucide="credit-card" class="w-4 h-4"></i> Transacciones
-      </a>
-      <a href="{{ url_for('registros_ingreso') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700">
-        <i data-lucide="clock" class="w-4 h-4"></i> Registros de Ingreso
-      </a>
-      <a href="{{ url_for('pantalla_acceso') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700">
-        <i data-lucide="scan-face" class="w-4 h-4"></i> Pantalla de Acceso
-      </a>
-    </nav>
-  </aside>
+  <!-- Botón hamburguesa (solo móvil) -->
+  <button id="hamburgerBtn" class="md:hidden p-3 text-white bg-gray-800 fixed top-4 left-4 z-50 rounded-full shadow-lg">
+    <i data-lucide="menu"></i>
+  </button>
 
-  <!-- CONTENIDO -->
-  <div class="flex flex-col flex-1 md:ml-64">
-    <!-- Botón hamburguesa solo en móvil -->
-    <header class="bg-gray-800 p-4 flex items-center md:hidden">
-      <button onclick="toggleSidebar()" class="text-white flex items-center gap-2">
-        <i id="toggle-icon" data-lucide="menu" class="w-6 h-6"></i>
-        <span>Menú</span>
+  <!-- Overlay oscuro para móvil -->
+  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30 md:hidden"></div>
+
+  <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] min-h-screen relative">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-gray-800 text-white border-r border-gray-700 p-4 w-64 fixed md:static top-0 left-0 h-full z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+      
+      <!-- Botón colapsar en escritorio -->
+      <button id="collapseBtn" class="hidden md:flex absolute -right-3 top-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full w-6 h-6 items-center justify-center z-50">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i>
       </button>
-    </header>
 
-    <main class="flex-1 p-6">
+      <div class="flex flex-col h-full" id="sidebarContent">
+        <div class="flex items-center justify-center mb-6">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="h-32 mx-auto transition-all duration-300 animate-latido" id="sidebarLogo">
+        </div>
+
+        <nav class="space-y-2 text-sm" id="sidebarLinks">
+          <a href="{{ url_for('formulario_usuario') }}" class="flex items-center p-2 rounded hover:bg-gray-700 {{ 'bg-gray-700' if request.endpoint == 'formulario_usuario' else '' }}">
+            <i data-lucide="user-plus" class="w-5 h-5 mr-2"></i> Registrar Usuario
+          </a>
+          <a href="{{ url_for('listar_usuarios') }}" class="flex items-center p-2 rounded hover:bg-gray-700 {{ 'bg-gray-700' if request.endpoint == 'listar_usuarios' else '' }}">
+            <i data-lucide="users" class="w-5 h-5 mr-2"></i> Clientes Activos
+          </a>
+          <a href="{{ url_for('usuarios_inactivos') }}" class="flex items-center p-2 rounded hover:bg-gray-700 {{ 'bg-gray-700' if request.endpoint == 'usuarios_inactivos' else '' }}">
+            <i data-lucide="user-x" class="w-5 h-5 mr-2"></i> Usuarios Inactivos
+          </a>
+          <a href="{{ url_for('dashboard') }}" class="flex items-center p-2 rounded hover:bg-gray-700 {{ 'bg-gray-700' if request.endpoint == 'dashboard' else '' }}">
+            <i data-lucide="layout-dashboard" class="w-5 h-5 mr-2"></i> Dashboard
+          </a>
+          <a href="{{ url_for('ver_transacciones') }}" class="flex items-center p-2 rounded hover:bg-gray-700 {{ 'bg-gray-700' if request.endpoint == 'ver_transacciones' else '' }}">
+            <i data-lucide="credit-card" class="w-5 h-5 mr-2"></i> Transacciones
+          </a>
+          <a href="{{ url_for('registros_ingreso') }}" class="flex items-center p-2 rounded hover:bg-gray-700 {{ 'bg-gray-700' if request.endpoint == 'registros_ingreso' else '' }}">
+            <i data-lucide="clock" class="w-5 h-5 mr-2"></i> Registros de Ingreso
+          </a>
+          <a href="{{ url_for('pantalla_acceso') }}" class="flex items-center p-2 rounded hover:bg-gray-700 {{ 'bg-gray-700' if request.endpoint == 'pantalla_acceso' else '' }}">
+            <i data-lucide="scan-face" class="w-5 h-5 mr-2"></i> Pantalla de Acceso
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Contenido -->
+    <main class="p-4 md:p-6 lg:p-8 w-full">
       {% block content %}{% endblock %}
     </main>
   </div>
 
+  <!-- Script menú -->
   <script>
+    const collapseBtn = document.getElementById('collapseBtn');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const overlay = document.getElementById('overlay');
     const sidebar = document.getElementById('sidebar');
-    const icon = document.getElementById('toggle-icon');
+    const logo = document.getElementById('sidebarLogo');
+    const links = document.getElementById('sidebarLinks');
+    let collapsed = false;
 
-    function toggleSidebar() {
-      sidebar.classList.toggle('-translate-x-full');
-      icon.setAttribute('data-lucide', 
-        sidebar.classList.contains('-translate-x-full') ? 'menu' : 'x');
+    // Colapsar escritorio
+    collapseBtn?.addEventListener('click', () => {
+      collapsed = !collapsed;
+      sidebar.classList.toggle('w-64');
+      sidebar.classList.toggle('w-16');
+      logo.classList.toggle('opacity-0');
+      links.classList.toggle('hidden');
+      collapseBtn.innerHTML = collapsed
+        ? '<i data-lucide="chevron-right" class="w-4 h-4"></i>'
+        : '<i data-lucide="chevron-left" class="w-4 h-4"></i>';
       lucide.createIcons();
-    }
+    });
+
+    // Mostrar menú en móvil con overlay
+    hamburgerBtn?.addEventListener('click', () => {
+      const isOpen = sidebar.classList.contains('translate-x-0');
+      sidebar.classList.toggle('-translate-x-full', isOpen);
+      sidebar.classList.toggle('translate-x-0', !isOpen);
+      overlay.classList.toggle('hidden', isOpen);
+    });
+
+    // Cerrar menú tocando overlay
+    overlay?.addEventListener('click', () => {
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    });
 
     lucide.createIcons();
   </script>
 </body>
 </html>
+
+
 
 
 
