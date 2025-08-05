@@ -9,76 +9,64 @@
     @keyframes heartbeat {
       0%, 100% { transform: scale(1); }
       25% { transform: scale(1.1); }
-      50% { transform: scale(0.95); }
-      75% { transform: scale(1.05); }
+      50% { transform: scale(1); }
+      75% { transform: scale(1.1); }
     }
     .animate-heartbeat {
-      animation: heartbeat 2s infinite;
+      animation: heartbeat 1.5s ease-in-out infinite;
     }
   </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col md:flex-row">
 
-  <!-- Sidebar -->
-  <aside id="sidebar"
-    class="bg-gray-800 w-64 p-6 space-y-6 shadow-lg transition-transform duration-300 transform -translate-x-full md:translate-x-0 fixed md:static inset-y-0 left-0 z-50">
-    
+  <!-- SIDEBAR -->
+  <aside id="sidebar" 
+         class="bg-gray-800 w-64 p-6 space-y-6 shadow-lg fixed md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
     <div class="flex justify-center">
       <img src="{{ url_for('static', filename='images/logo.png') }}" 
            alt="Logo" 
-           class="w-32 h-32 object-contain animate-heartbeat">
+           class="w-24 h-24 object-contain animate-heartbeat">
     </div>
 
     <nav class="space-y-3 mt-6">
-      <a href="{{ url_for('formulario_usuario') }}"
-         class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'formulario_usuario' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('formulario_usuario') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'formulario_usuario' %}bg-gray-700{% endif %}">
         <i data-lucide="user-plus" class="w-4 h-4"></i> Registrar Usuario
       </a>
-
-      <a href="{{ url_for('listar_usuarios') }}"
-         class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'listar_usuarios' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('listar_usuarios') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'listar_usuarios' %}bg-gray-700{% endif %}">
         <i data-lucide="users" class="w-4 h-4"></i> Clientes Activos
       </a>
-
-      <a href="{{ url_for('usuarios_inactivos') }}"
-         class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'usuarios_inactivos' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('usuarios_inactivos') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'usuarios_inactivos' %}bg-gray-700{% endif %}">
         <i data-lucide="user-x" class="w-4 h-4"></i> Usuarios Inactivos
       </a>
-
-      <a href="{{ url_for('dashboard') }}"
-         class="block px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'dashboard' %}bg-gray-700{% endif %}">
-        <i data-lucide="layout-dashboard" class="inline-block w-4 h-4 mr-2"></i> Dashboard
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'dashboard' %}bg-gray-700{% endif %}">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
       </a>
-
-      <a href="{{ url_for('ver_transacciones') }}" 
-         class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition">
-        <i data-lucide="credit-card" class="inline-block w-4 h-4 mr-2"></i> <span>Transacciones</span>
+      <a href="{{ url_for('ver_transacciones') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'ver_transacciones' %}bg-gray-700{% endif %}">
+        <i data-lucide="credit-card" class="w-4 h-4"></i> Transacciones
       </a>
-
-      <a href="{{ url_for('registros_ingreso') }}" 
-         class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition {% if request.endpoint == 'registros_ingreso' %}bg-gray-700{% endif %}">
-        <i data-lucide="clock" class="inline-block w-4 h-4 mr-2"></i> <span>Registros de Ingreso</span>
+      <a href="{{ url_for('registros_ingreso') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'registros_ingreso' %}bg-gray-700{% endif %}">
+        <i data-lucide="clock" class="w-4 h-4"></i> Registros de Ingreso
       </a>
-
-      <a href="{{ url_for('pantalla_acceso') }}" 
-         class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700 rounded transition {% if request.endpoint == 'pantalla_acceso' %}bg-gray-700{% endif %}">
-        <i data-lucide="scan-face" class="inline-block w-4 h-4 mr-2"></i> <span>Pantalla de Acceso</span>
+      <a href="{{ url_for('pantalla_acceso') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'pantalla_acceso' %}bg-gray-700{% endif %}">
+        <i data-lucide="scan-face" class="w-4 h-4"></i> Pantalla de Acceso
       </a>
     </nav>
   </aside>
 
-  <!-- Contenido -->
-  <main class="flex-1 p-4 md:p-8 transition-all duration-300 w-full md:ml-0">
-    <!-- Botón hamburguesa -->
-    <div class="flex md:hidden mb-4">
-      <button onclick="toggleSidebar()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center gap-2">
+  <!-- CONTENIDO -->
+  <div class="flex-1 md:ml-0">
+    <!-- Botón hamburguesa en móvil -->
+    <div class="md:hidden bg-gray-800 p-4 flex justify-between items-center">
+      <span class="font-bold">Menú</span>
+      <button onclick="toggleSidebar()" class="p-2 rounded bg-gray-700 hover:bg-gray-600">
         <i id="toggle-icon" data-lucide="menu" class="w-5 h-5"></i>
-        <span>Menú</span>
       </button>
     </div>
 
-    {% block content %}{% endblock %}
-  </main>
+    <main class="p-4 md:p-8">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 
   <script>
     const sidebar = document.getElementById('sidebar');
@@ -99,6 +87,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
