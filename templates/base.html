@@ -17,11 +17,11 @@
     }
   </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col md:flex-row">
+<body class="bg-gray-900 text-white min-h-screen">
 
   <!-- SIDEBAR -->
   <aside id="sidebar" 
-         class="bg-gray-800 w-64 p-6 space-y-6 shadow-lg fixed md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+         class="bg-gray-800 w-64 p-6 space-y-6 shadow-lg fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out">
     <div class="flex justify-center">
       <img src="{{ url_for('static', filename='images/logo.png') }}" 
            alt="Logo" 
@@ -53,9 +53,10 @@
     </nav>
   </aside>
 
-  <!-- CONTENIDO -->
-  <div class="flex-1 md:ml-0">
-    <!-- Botón hamburguesa en móvil -->
+  <!-- MAIN -->
+  <div class="md:ml-64 flex flex-col min-h-screen">
+    
+    <!-- Top bar en móvil -->
     <div class="md:hidden bg-gray-800 p-4 flex justify-between items-center">
       <span class="font-bold">Menú</span>
       <button onclick="toggleSidebar()" class="p-2 rounded bg-gray-700 hover:bg-gray-600">
@@ -63,7 +64,8 @@
       </button>
     </div>
 
-    <main class="p-4 md:p-8">
+    <!-- Contenido -->
+    <main class="flex-1 p-4 md:p-8">
       {% block content %}{% endblock %}
     </main>
   </div>
@@ -85,8 +87,10 @@
 
     lucide.createIcons();
   </script>
+
 </body>
 </html>
+
 
 
 
