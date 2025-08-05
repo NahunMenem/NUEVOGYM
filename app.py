@@ -12,12 +12,12 @@ app = Flask(__name__)
 from flask_sqlalchemy import SQLAlchemy
 
 import os
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("DATABASE_URL") or "postgresql://negocio2_user:0reioO9H1lLJqE2IazaFKoZ55ZItnU5X@dpg-d04do9qdbo4c73egutjg-a.oregon-postgres.render.com/negocio2"
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-
 db = SQLAlchemy(app)
+
 
 
 # Configuración del lector
@@ -40,7 +40,6 @@ class UsuarioLector(db.Model):
     telefono = db.Column(db.String(30))
     valido_hasta = db.Column(db.Date)
 
-#DATABASE_URL = "postgresql://negocio2_user:0reioO9H1lLJqE2IazaFKoZ55ZItnU5X@dpg-d04do9qdbo4c73egutjg-a.oregon-postgres.render.com/negocio2"
 
 @app.route('/cargar_usuario', methods=['POST'])
 def cargar_usuario():
@@ -252,25 +251,52 @@ def listar_usuarios_bd():
 
 @app.route('/eliminar_usuario/<string:employee_no>', methods=['POST'])
 def eliminar_usuario(employee_no):
-    url = f"{BASE_URL}/ISAPI/AccessControl/UserInfoDetail/Delete?format=json"
+    # 1. Eliminar del lector
+    url = f"{BASE_URL}/AccessControl/UserInfo/Delete?format=json"
     payload = {
-        "UserInfoDetail": {
-            "employeeNo": employee_no
+        "UserInfoDelCond": {
+            "EmployeeNoList": [
+                {"employeeNo": employee_no}
+            ]
         }
     }
 
     try:
-        res = requests.post(
+        res = requests.put(
             url,
             json=payload,
             headers={"Content-Type": "application/json"},
             auth=HTTPDigestAuth(USERNAME, PASSWORD),
             verify=False
         )
-        print(f"Eliminado {employee_no}: {res.status_code} - {res.text}")
+
+        # 2. Si el lector lo borró, borrar pagos y usuario de la DB
+        if res.status_code == 200:
+            try:
+                conn = psycopg2.connect(DATABASE_URL)
+                cur = conn.cursor()
+
+                # Primero borrar pagos asociados
+                cur.execute("DELETE FROM pagos_lector WHERE legajo = %s", (employee_no,))
+                # Luego borrar el usuario
+                cur.execute("DELETE FROM usuarios_lector WHERE legajo = %s", (employee_no,))
+
+                conn.commit()
+                cur.close()
+                conn.close()
+                print(f"Usuario {employee_no} y sus pagos eliminados de la base de datos.")
+            except Exception as e:
+                print(f"[ERROR] No se pudo eliminar de la base: {e}")
+
+        else:
+            print(f"[ERROR LECTOR] {res.status_code} - {res.text}")
+
         return jsonify({"status": res.status_code, "response": res.text})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
 
 
 
@@ -752,35 +778,34 @@ def api_cumples_mes():
         print("[ERROR CUMPLES]", e)
         return jsonify([]), 500
 
+
 @app.route('/usuarios_inactivos')
 def usuarios_inactivos():
     try:
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
 
-        # Traer usuarios cuya última fecha de ingreso fue hace más de 60 días
+        # Traer usuarios cuya última fecha de ingreso fue hace más de 60 días o nunca ingresaron
         cur.execute("""
-            SELECT u.legajo, u.nombre, u.genero, u.fecha_nacimiento, u.telefono, u.valido_hasta
+            SELECT u.legajo, u.nombre, u.genero, u.fecha_nacimiento, u.telefono, u.valido_hasta,
+                   MAX(i.fecha) AS ultima_fecha
             FROM usuarios_lector u
-            LEFT JOIN (
-                SELECT legajo, MAX(fecha) AS ultima_fecha
-                FROM ingresos_lector
-                GROUP BY legajo
-            ) i ON u.legajo = i.legajo
-            WHERE i.ultima_fecha IS NULL 
-               OR i.ultima_fecha < CURRENT_DATE - INTERVAL '60 days'
-            ORDER BY i.ultima_fecha NULLS FIRST;
+            LEFT JOIN ingresos_lector i ON u.legajo = i.legajo
+            GROUP BY u.legajo, u.nombre, u.genero, u.fecha_nacimiento, u.telefono, u.valido_hasta
+            HAVING MAX(i.fecha) IS NULL OR MAX(i.fecha) < CURRENT_DATE - INTERVAL '60 days'
+            ORDER BY ultima_fecha NULLS FIRST;
         """)
-        
+
         usuarios = []
         for row in cur.fetchall():
             usuarios.append({
                 "employeeNo": row[0],
                 "name": row[1],
                 "genero": row[2],
-                "fecha_nacimiento": row[3],
-                "telefono": row[4],
-                "valido_hasta": row[5],
+                "fecha_nacimiento": row[3].isoformat() if row[3] else "-",
+                "telefono": row[4] or "-",
+                "valido_hasta": row[5].isoformat() if row[5] else "-",
+                "ultima_fecha": row[6].strftime('%Y-%m-%d') if row[6] else "Nunca",
                 "membresia": "Vigente" if row[5] and row[5] >= date.today() else "Vencido"
             })
 
@@ -792,50 +817,8 @@ def usuarios_inactivos():
     except Exception as e:
         return f"Error al obtener usuarios inactivos: {e}", 500
 
-@app.route('/usuarios_sistema')
-def usuarios_sistema():
-    from datetime import date
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        cur = conn.cursor()
-        
-        cur.execute("""
-            SELECT legajo, nombre, genero, fecha_nacimiento, telefono, valido_hasta
-            FROM usuarios_lector
-            ORDER BY nombre ASC
-        """)
-        datos = cur.fetchall()
-        conn.close()
 
-        usuarios = []
-        for row in datos:
-            usuarios.append({
-                "legajo": row[0],
-                "nombre": row[1],
-                "genero": row[2],
-                "fecha_nacimiento": row[3],
-                "telefono": row[4],
-                "valido_hasta": row[5],
-                "membresia": "Vigente" if row[5] and row[5] >= date.today() else "Vencido"
-            })
 
-        return render_template("usuarios_sistema.html", usuarios=usuarios)
-
-    except Exception as e:
-        return f"Error al cargar usuarios del sistema: {e}", 500
-
-@app.route('/eliminar_usuario_sistema/<string:legajo>', methods=['POST'])
-def eliminar_usuario_sistema(legajo):
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        cur = conn.cursor()
-        cur.execute("DELETE FROM usuarios_lector WHERE legajo = %s", (legajo,))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({"status": "ok"})
-    except Exception as e:
-        return jsonify({"status": "error", "mensaje": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
@@ -843,4 +826,3 @@ if __name__ == "__main__":
 
 #if __name__ == '__main__':
  #   app.run(host="0.0.0.0", port=5000, debug=True)
-
