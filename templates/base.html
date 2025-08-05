@@ -8,24 +8,20 @@
   <style>
     @keyframes heartbeat {
       0%, 100% { transform: scale(1); }
-      25% { transform: scale(1.1); }
-      50% { transform: scale(1); }
-      75% { transform: scale(1.1); }
+      50% { transform: scale(1.15); }
     }
-    .animate-heartbeat {
-      animation: heartbeat 1.5s ease-in-out infinite;
-    }
+    .animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
   </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
 
   <!-- SIDEBAR -->
   <aside id="sidebar" 
-         class="bg-gray-800 w-64 p-6 space-y-6 shadow-lg fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out">
+         class="fixed md:static inset-y-0 left-0 w-64 bg-gray-800 p-6 space-y-6 shadow-lg transition-transform transform -translate-x-full md:translate-x-0 z-50">
     <div class="flex justify-center">
       <img src="{{ url_for('static', filename='images/logo.png') }}" 
            alt="Logo" 
-           class="w-24 h-24 object-contain animate-heartbeat">
+           class="w-32 h-32 object-contain animate-heartbeat">
     </div>
 
     <nav class="space-y-3 mt-6">
@@ -41,31 +37,29 @@
       <a href="{{ url_for('dashboard') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'dashboard' %}bg-gray-700{% endif %}">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
       </a>
-      <a href="{{ url_for('ver_transacciones') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'ver_transacciones' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('ver_transacciones') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700">
         <i data-lucide="credit-card" class="w-4 h-4"></i> Transacciones
       </a>
-      <a href="{{ url_for('registros_ingreso') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'registros_ingreso' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('registros_ingreso') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700">
         <i data-lucide="clock" class="w-4 h-4"></i> Registros de Ingreso
       </a>
-      <a href="{{ url_for('pantalla_acceso') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 {% if request.endpoint == 'pantalla_acceso' %}bg-gray-700{% endif %}">
+      <a href="{{ url_for('pantalla_acceso') }}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700">
         <i data-lucide="scan-face" class="w-4 h-4"></i> Pantalla de Acceso
       </a>
     </nav>
   </aside>
 
-  <!-- MAIN -->
-  <div class="md:ml-64 flex flex-col min-h-screen">
-    
-    <!-- Top bar en móvil -->
-    <div class="md:hidden bg-gray-800 p-4 flex justify-between items-center">
-      <span class="font-bold">Menú</span>
-      <button onclick="toggleSidebar()" class="p-2 rounded bg-gray-700 hover:bg-gray-600">
-        <i id="toggle-icon" data-lucide="menu" class="w-5 h-5"></i>
+  <!-- CONTENIDO -->
+  <div class="flex flex-col flex-1 md:ml-64">
+    <!-- Botón hamburguesa solo en móvil -->
+    <header class="bg-gray-800 p-4 flex items-center md:hidden">
+      <button onclick="toggleSidebar()" class="text-white flex items-center gap-2">
+        <i id="toggle-icon" data-lucide="menu" class="w-6 h-6"></i>
+        <span>Menú</span>
       </button>
-    </div>
+    </header>
 
-    <!-- Contenido -->
-    <main class="flex-1 p-4 md:p-8">
+    <main class="flex-1 p-6">
       {% block content %}{% endblock %}
     </main>
   </div>
@@ -75,21 +69,17 @@
     const icon = document.getElementById('toggle-icon');
 
     function toggleSidebar() {
-      if (sidebar.classList.contains("-translate-x-full")) {
-        sidebar.classList.remove("-translate-x-full");
-        icon.setAttribute("data-lucide", "x");
-      } else {
-        sidebar.classList.add("-translate-x-full");
-        icon.setAttribute("data-lucide", "menu");
-      }
+      sidebar.classList.toggle('-translate-x-full');
+      icon.setAttribute('data-lucide', 
+        sidebar.classList.contains('-translate-x-full') ? 'menu' : 'x');
       lucide.createIcons();
     }
 
     lucide.createIcons();
   </script>
-
 </body>
 </html>
+
 
 
 
