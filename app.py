@@ -17,6 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
+db = SQLAlchemy(app)
 
 
 # Configuración del lector
@@ -842,3 +843,4 @@ if __name__ == "__main__":
 
 #if __name__ == '__main__':
  #   app.run(host="0.0.0.0", port=5000, debug=True)
+
