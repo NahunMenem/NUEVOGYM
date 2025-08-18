@@ -75,7 +75,15 @@
           <td class="p-3">{{ u.genero or "-" }}</td>
           <td class="p-3">{{ u.fecha_nacimiento or "-" }}</td>
           <td class="p-3">{{ u.telefono or "-" }}</td>
-          <td class="p-3">{{ u.Valid.endTime[:16].replace('T', ' ') if u.Valid }}</td>
+          <td class="p-3">
+            {% if u.valido_hasta %}
+              {{ u.valido_hasta }}
+            {% elif u.Valid and u.Valid.endTime %}
+              {{ u.Valid.endTime[:10] }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
           <td class="p-3">
             {% if u.membresia == "Vigente" %}
               <span class="text-green-400 font-semibold">Vigente</span>
@@ -239,4 +247,5 @@
 </script>
 
 {% endblock %}
+
 
